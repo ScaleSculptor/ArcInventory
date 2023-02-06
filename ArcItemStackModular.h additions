@@ -1,0 +1,16 @@
+	//Returns the fragment on this stack, then the fragment on this stack's item def. All Subitems are ignored.
+	UArcItemFragment* FindThisItemsFragment(FragmentQueryPredicate Predicate);
+
+	//Return all fragments matching the predicate,  but does not include subitems
+	void FindAllOfThisItemsFragments(TArray<UArcItemFragment*>& OutFragments, FragmentQueryPredicate Predicate);
+
+
+
+
+	UFUNCTION(BlueprintCallable, Category = "Arc|Inventory", DisplayName = "Find Desired Fragment", meta = (DeterminesOutputType = FragmentClass))
+		UArcItemFragment* K2_FindDesiredFragment(TSubclassOf<UArcItemFragment> FragmentClass, FGameplayTagQuery Query, bool IncludeSubitems = true);
+
+	UFUNCTION(BlueprintCallable, Category = "Arc|Inventory", DisplayName = "Find All Desired Fragments", meta = (DeterminesOutputType = FragmentClass))
+		TArray<UArcItemFragment*> K2_FindAllDesiredFragments(TSubclassOf<UArcItemFragment> FragmentClass, FGameplayTagQuery Query, bool IncludeSubitems = true);
+
+
