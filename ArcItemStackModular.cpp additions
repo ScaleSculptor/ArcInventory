@@ -1,0 +1,155 @@
+
+UArcItemFragment* UArcItemStackModular::FindThisItemsFragment(FragmentQueryPredicate Predicate)
+{
+	//Then, see if our item stack has it
+	for (const FArcItemFragmentEntry& Entry : Fragments)
+	{
+		if (IsValid(Entry.Fragment)
+			&& Predicate(Entry.Fragment))
+		{
+			return Entry.Fragment;
+		}
+	}
+	for (UArcItemFragment* Fragment : NonReplicatedFragments)
+	{
+		if (IsValid(Fragment) && Predicate(Fragment))
+		{
+			return Fragment;
+		}
+	}
+	//Then, check if the item definition has this fragment
+
+	if (IsValid(ItemDefinition))
+	{
+		for (UArcItemFragment* Fragment : ItemDefinition->Fragments)
+		{
+			if (IsValid(Fragment) && Predicate(Fragment))
+			{
+				return Fragment;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+void UArcItemStackModular::FindAllOfThisItemsFragments(TArray<UArcItemFragment*>& OutFragments, FragmentQueryPredicate Predicate)
+{
+	//Then, Collect all of our item stack's fragments
+	for (const FArcItemFragmentEntry& Entry : Fragments)
+	{
+		if (IsValid(Entry.Fragment)
+			&& Predicate(Entry.Fragment))
+		{
+			OutFragments.Add(Entry.Fragment);
+		}
+	}
+	for (UArcItemFragment* Fragment : NonReplicatedFragments)
+	{
+		if (IsValid(Fragment) && Predicate(Fragment))
+		{
+			OutFragments.Add(Fragment);
+		}
+	}
+
+	//Then, collect all of our item definition's fragments
+	if (IsValid(ItemDefinition))
+	{
+		for (UArcItemFragment* Fragment : ItemDefinition->Fragments)
+		{
+			if (IsValid(Fragment) && Predicate(Fragment))
+			{
+				OutFragments.Add(Fragment);
+			}
+		}
+	}
+}
+
+UArcItemFragment* UArcItemStackModular::K2_FindDesiredFragment(TSubclassOf<UArcItemFragment> FragmentClass, FGameplayTagQuery Query, bool IncludeSubitems)
+{
+	if (IncludeSubitems)
+	{
+		if (Query.IsEmpty()) 
+		{
+			return FindFirstFragment([&FragmentClass](UArcItemFragment* Frag) -> bool
+				{
+					return IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+				});
+		}
+
+		return FindFirstFragment([&FragmentClass, &Query](UArcItemFragment* Frag) -> bool
+			{
+				const bool bMatchesClass = IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+		FGameplayTagContainer Tags;
+		Frag->GetOwnedGameplayTags(Tags);
+
+		return bMatchesClass && Query.Matches(Tags);
+			});
+	}
+
+	if (Query.IsEmpty())
+	{
+		return FindThisItemsFragment([&FragmentClass](UArcItemFragment* Frag) -> bool
+			{
+				return IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+			});
+	}
+
+	return FindThisItemsFragment([&FragmentClass, &Query](UArcItemFragment* Frag) -> bool
+		{
+			const bool bMatchesClass = IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+	FGameplayTagContainer Tags;
+	Frag->GetOwnedGameplayTags(Tags);
+
+	return bMatchesClass && Query.Matches(Tags);
+		});
+
+}
+
+TArray<UArcItemFragment*> UArcItemStackModular::K2_FindAllDesiredFragments(TSubclassOf<UArcItemFragment> FragmentClass, FGameplayTagQuery Query, bool IncludeSubitems)
+{
+	if (IncludeSubitems)
+	{
+		if (Query.IsEmpty())
+		{
+			TArray<UArcItemFragment*> Frags;
+			FindAllFragments(Frags, [&FragmentClass](UArcItemFragment* Frag) -> bool
+				{
+					return IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+				});
+			return Frags;
+		}
+
+		TArray<UArcItemFragment*> Frags;
+		FindAllFragments(Frags, [&FragmentClass, &Query](UArcItemFragment* Frag) -> bool
+			{
+				const bool bMatchesClass = IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+		FGameplayTagContainer Tags;
+		Frag->GetOwnedGameplayTags(Tags);
+
+		return bMatchesClass && Query.Matches(Tags);
+			});
+		return Frags;
+	}
+
+	if (Query.IsEmpty())
+	{
+		TArray<UArcItemFragment*> Frags;
+		FindAllOfThisItemsFragments(Frags, [&FragmentClass](UArcItemFragment* Frag) -> bool
+			{
+				return IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+			});
+		return Frags;
+	}
+
+	TArray<UArcItemFragment*> Frags;
+	FindAllOfThisItemsFragments(Frags, [&FragmentClass, &Query](UArcItemFragment* Frag) -> bool
+		{
+			const bool bMatchesClass = IsValid(FragmentClass) ? Frag->IsA(FragmentClass) : true;
+	FGameplayTagContainer Tags;
+	Frag->GetOwnedGameplayTags(Tags);
+
+	return bMatchesClass && Query.Matches(Tags);
+		});
+	return Frags;
+}
